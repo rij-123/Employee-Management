@@ -1,0 +1,52 @@
+{
+  "employees": [
+    {
+      "id": 1,
+      "name": "Rajeshwari Kanojiya",
+      "email": "rajeshwari.kanojiya@idealake.com",
+      "phone": "7208417961",
+      "department": "Engineering",
+      "role": "Frontend Developer",
+      "salary": 55000,
+      "joined": "2023-04-12"
+    },
+    {
+      "id": 2,
+      "name": "Priya Patel",
+      "email": "priya@company.com",
+      "phone": "9123456780",
+      "department": "HR",
+      "role": "HR Manager",
+      "salary": 70000,
+      "joined": "2022-09-01"
+    },
+    {
+      "id": 3,
+      "name": "Rohan Mehta",
+      "email": "rohan@company.com",
+      "phone": "9988776655",
+      "department": "Sales",
+      "role": "Sales Executive",
+      "salary": 55000,
+      "joined": "2024-01-20"
+    },
+    {
+      "name": "Kamika Gharth",
+      "email": "kamika_gharth@gmail.com",
+      "phone": "7208417962",
+      "department": "Marketing",
+      "role": "Marketing Head",
+      "salary": 150000,
+      "joined": "2026-12-01",
+      "id": 4
+    }
+  ],
+  "users": [
+    {
+      "name": "Rajeshwari Kanojiya",
+      "email": "rajeshwari.kanojiya@gmail.com",
+      "password": "3aa23d68e93dbf93f6163ea510202c7104467b7744c379e5cd5b922ed64a73dc",
+      "id": 1
+    }
+  ]
+}
