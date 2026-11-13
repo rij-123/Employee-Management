@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { login, register } from "../auth.js";
 
-export default function AuthPage({ mode, onSwitch, onSuccess }) {
+export default function AuthPage({ mode, notice, prefillEmail, onSwitch, onSuccess, onRegistered }) {
   const isLogin = mode === "login";
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ name: "", email: prefillEmail || "", password: "", confirm: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -26,8 +26,12 @@ export default function AuthPage({ mode, onSwitch, onSuccess }) {
     setBusy(true);
     setError("");
     try {
-      const user = isLogin ? await login(form) : await register(form);
-      onSuccess(user);
+      if (isLogin) {
+        onSuccess(await login(form));
+      } else {
+        await register(form);
+        onRegistered(form.email.trim().toLowerCase());
+      }
     } catch (err) {
       setError(err.message);
       setBusy(false);
@@ -39,7 +43,7 @@ export default function AuthPage({ mode, onSwitch, onSuccess }) {
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
         <h1>{isLogin ? "Welcome back" : "Create account"}</h1>
         <p className="muted">
-         {isLogin ? "Log in to view your dashboard" : "Create a new account"}
+          {isLogin ? "Log in to view your dashboard" : "Create a new account"}
         </p>
 
         {!isLogin && (
@@ -69,6 +73,7 @@ export default function AuthPage({ mode, onSwitch, onSuccess }) {
           </label>
         )}
 
+        {notice && <div className="form-success" role="status">{notice}</div>}
         {error && <div className="form-error" role="alert">{error}</div>}
 
         <button className="btn primary auth-submit" disabled={busy}>
@@ -78,7 +83,7 @@ export default function AuthPage({ mode, onSwitch, onSuccess }) {
         <p className="auth-switch muted">
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <button type="button" className="link-btn" onClick={onSwitch}>
-            {isLogin ? "Create one" : "Sign in"}
+            {isLogin ? "Register" : "Login"}
           </button>
         </p>
       </form>

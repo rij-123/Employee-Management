@@ -25,8 +25,7 @@ export async function register({ name, email, password }) {
   const mail = email.trim().toLowerCase();
   const existing = await api.get(`/users?email=${encodeURIComponent(mail)}`);
   if (existing.length) throw new Error("An account with this email already exists.");
-  const user = await api.post("/users", { name: name.trim(), email: mail, password: await hash(password) });
-  return startSession(user);
+  await api.post("/users", { name: name.trim(), email: mail, password: await hash(password) });
 }
 
 export async function login({ email, password }) {

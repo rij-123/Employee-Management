@@ -6,11 +6,24 @@ import { getSession, logout } from "./auth.js";
 export default function App() {
   const [user, setUser] = useState(getSession);
   const [mode, setMode] = useState("login");
+  const [notice, setNotice] = useState("");
+  const [prefillEmail, setPrefillEmail] = useState("");
 
   function handleLogout() {
     logout();
     setUser(null);
     setMode("login");
+  }
+
+  function handleRegistered(email) {
+    setPrefillEmail(email);
+    setNotice("Account created successfully. Please log in.");
+    setMode("login");
+  }
+
+  function handleSwitch() {
+    setNotice("");
+    setMode(mode === "login" ? "register" : "login");
   }
 
   if (user) return <Dashboard user={user} onLogout={handleLogout} />;
@@ -19,8 +32,11 @@ export default function App() {
     <AuthPage
       key={mode}
       mode={mode}
-      onSwitch={() => setMode(mode === "login" ? "register" : "login")}
+      notice={notice}
+      prefillEmail={prefillEmail}
+      onSwitch={handleSwitch}
       onSuccess={setUser}
+      onRegistered={handleRegistered}
     />
   );
 }
