@@ -9,7 +9,7 @@ async function hash(text) {
 
 export function getSession() {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY));
+    return JSON.parse(sessionStorage.getItem(SESSION_KEY));
   } catch {
     return null;
   }
@@ -17,7 +17,7 @@ export function getSession() {
 
 function startSession(user) {
   const session = { id: user.id, name: user.name, email: user.email };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
 }
 
@@ -33,11 +33,11 @@ export async function login({ email, password }) {
   const mail = email.trim().toLowerCase();
   const [user] = await api.get(`/users?email=${encodeURIComponent(mail)}`);
   if (!user || user.password !== (await hash(password))) {
-    throw new Error("Invalid email or password.");
+    throw new Error("Incorrect email or password.");
   }
   return startSession(user);
 }
 
 export function logout() {
-  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
 }
