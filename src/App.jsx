@@ -1,13 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AuthPage from "./components/AuthPage.jsx";
 import Dashboard from "./Dashboard.jsx";
-import { getSession, logout } from "./auth.js";
+import { logout } from "./auth.js";
 
 export default function App() {
-  const [user, setUser] = useState(getSession);
+  // Page refresh automatically logs out: user starts as null
+  const [user, setUser] = useState(null);
   const [mode, setMode] = useState("login");
   const [notice, setNotice] = useState("");
   const [prefillEmail, setPrefillEmail] = useState("");
+
+  useEffect(() => {
+    // Clear any persistent session on refresh/load
+    logout();
+  }, []);
 
   function handleLogout() {
     logout();

@@ -33,6 +33,13 @@ body {
 .stat-value { font-size: 1.5rem; font-weight: 700; }
 
 .toolbar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+
+.view-toggle { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
+.tab-btn:hover { background: #f1f2f7; color: var(--text); }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tab-count { background: rgba(0, 0, 0, 0.08); padding: 2px 7px; border-radius: 999px; font-size: 0.75rem; }
+.tab-btn.active .tab-count { background: rgba(255, 255, 255, 0.25); color: #fff; }
 .toolbar .input:first-child { flex: 1; min-width: 220px; }
 
 .input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: #fff; color: inherit; }
@@ -59,6 +66,8 @@ body {
 .name-cell { display: flex; align-items: center; gap: 10px; }
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: #e0e7ff; color: var(--primary); display: grid; place-items: center; font-weight: 700; }
 .badge { background: #eef2ff; color: var(--primary); padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; }
+.badge.you-badge { background: #ecfdf5; color: #047857; font-weight: 600; }
+.badge.other-badge { background: #f3f4f6; color: #4b5563; }
 .actions { display: flex; gap: 6px; }
 
 .empty { background: var(--card); border: 1px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; color: var(--muted); }

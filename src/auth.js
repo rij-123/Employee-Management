@@ -1,6 +1,6 @@
 import { api } from "./api.js";
 
-const SESSION_KEY = "em-session-v1";
+const SESSION_KEY = "em-session-v2";
 
 async function hash(text) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -8,17 +8,13 @@ async function hash(text) {
 }
 
 export function getSession() {
-  try {
-    return JSON.parse(sessionStorage.getItem(SESSION_KEY));
-  } catch {
-    return null;
-  }
+  // Page refresh logs out: never restore session across reloads
+  logout();
+  return null;
 }
 
 function startSession(user) {
-  const session = { id: user.id, name: user.name, email: user.email };
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  return session;
+  return { id: user.id, name: user.name, email: user.email };
 }
 
 export async function register({ name, email, phone, password }) {
@@ -43,5 +39,10 @@ export async function login({ email, password }) {
 }
 
 export function logout() {
-  sessionStorage.removeItem(SESSION_KEY);
+  try {
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+  } catch (err) {
+    console.error("Session remove error:", err);
+  }
 }

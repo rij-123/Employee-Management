@@ -13,43 +13,74 @@ export default function Dashboard({ user, onLogout }) {
   const [showForm, setShowForm] = useState(false);
   const [query, setQuery] = useState("");
   const [dept, setDept] = useState("All");
+  const [viewMode, setViewMode] = useState("all"); // 'all' | 'mine'
 
   useEffect(() => {
     api
       .get("/employees")
-      .then(setEmployees)
+      .then((data) => {
+        setEmployees(Array.isArray(data) ? data : []);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
+  const allCount = employees.length;
+  const myCount = useMemo(() => {
+    return employees.filter(
+      (e) => String(e.userId) === String(user.id) || e.addedBy === user.name
+    ).length;
+  }, [employees, user]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return employees.filter((e) => {
+      // Filter by my employees vs all
+      if (viewMode === "mine") {
+        const isMine = String(e.userId) === String(user.id) || e.addedBy === user.name;
+        if (!isMine) return false;
+      }
+
       const matchDept = dept === "All" || e.department === dept;
       const matchQuery =
         !q ||
         e.name.toLowerCase().includes(q) ||
         e.email.toLowerCase().includes(q) ||
-        e.role.toLowerCase().includes(q);
+        e.role.toLowerCase().includes(q) ||
+        (e.addedBy && e.addedBy.toLowerCase().includes(q));
       return matchDept && matchQuery;
     });
-  }, [employees, query, dept]);
+  }, [employees, query, dept, viewMode, user]);
 
   const totalSalary = filtered.reduce((sum, e) => sum + Number(e.salary || 0), 0);
 
   async function handleSave(data) {
     try {
       if (data.id) {
-        const saved = await api.put(`/employees/${data.id}`, data);
+        // Preserving original creator if editing, otherwise assign current user
+        const existingEmp = employees.find((e) => e.id === data.id);
+        const payload = {
+          ...data,
+          userId: existingEmp?.userId || data.userId || user.id,
+          addedBy: existingEmp?.addedBy || data.addedBy || user.name,
+          updatedAt: new Date().toISOString(),
+        };
+        const saved = await api.put(`/employees/${data.id}`, payload);
         setEmployees((list) => list.map((e) => (e.id === saved.id ? saved : e)));
       } else {
-        const saved = await api.post("/employees", data);
+        const payload = {
+          ...data,
+          userId: user.id,
+          addedBy: user.name,
+          createdAt: new Date().toISOString(),
+        };
+        const saved = await api.post("/employees", payload);
         setEmployees((list) => [...list, saved]);
       }
       setError("");
       closeForm();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to save employee.");
     }
   }
 
@@ -60,7 +91,7 @@ export default function Dashboard({ user, onLogout }) {
       setEmployees((list) => list.filter((e) => e.id !== id));
       setError("");
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to delete employee.");
     }
   }
 
@@ -99,7 +130,11 @@ export default function Dashboard({ user, onLogout }) {
       <section className="stats">
         <div className="stat">
           <span className="stat-label">Total Employees</span>
-          <span className="stat-value">{filtered.length}</span>
+          <span className="stat-value">{allCount}</span>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Added by You</span>
+          <span className="stat-value" style={{ color: "var(--primary)" }}>{myCount}</span>
         </div>
         <div className="stat">
           <span className="stat-label">Monthly Payroll</span>
@@ -111,11 +146,30 @@ export default function Dashboard({ user, onLogout }) {
         </div>
       </section>
 
+      <div className="view-toggle">
+        <button
+          type="button"
+          className={`tab-btn ${viewMode === "all" ? "active" : ""}`}
+          onClick={() => setViewMode("all")}
+        >
+          All Employees
+          <span className="tab-count">{allCount}</span>
+        </button>
+        <button
+          type="button"
+          className={`tab-btn ${viewMode === "mine" ? "active" : ""}`}
+          onClick={() => setViewMode("mine")}
+        >
+          Added by Me
+          <span className="tab-count">{myCount}</span>
+        </button>
+      </div>
+
       <section className="toolbar">
         <input
           className="input"
           type="search"
-          placeholder="Search by name, email or role..."
+          placeholder="Search by name, email, role or who added..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -128,10 +182,16 @@ export default function Dashboard({ user, onLogout }) {
       </section>
 
       {error && <div className="form-error" role="alert" style={{ marginBottom: 16 }}>{error}</div>}
+
       {loading ? (
         <p className="muted">Loading employees...</p>
       ) : (
-        <EmployeeTable employees={filtered} onEdit={openEdit} onDelete={handleDelete} />
+        <EmployeeTable
+          employees={filtered}
+          currentUser={user}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+        />
       )}
 
       {showForm && (
