@@ -38,7 +38,8 @@ body {
 .input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: #fff; color: inherit; }
 .toolbar select.input { width: auto; min-width: 160px; }
 .input:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
-.input.invalid { border-color: var(--danger); }
+.input.invalid { border-color: var(--danger); background-color: #fffbfa; }
+.input.invalid:focus { outline: 2px solid var(--danger); outline-offset: -1px; }
 
 .btn { padding: 9px 16px; border: 1px solid var(--border); background: #fff; border-radius: 8px; font: inherit; cursor: pointer; }
 .btn:hover { background: #f1f2f7; }

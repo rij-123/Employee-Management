@@ -14,68 +14,155 @@ export default function AuthPage({ mode, notice, prefillEmail, onSwitch, onSucce
   const [apiError, setApiError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-    if (fieldErrors[field]) {
-      setFieldErrors((prev) => ({ ...prev, [field]: "" }));
+  function validateField(field, value, currentForm = form) {
+    let err = "";
+    const val = value !== undefined ? value : currentForm[field] || "";
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    switch (field) {
+      case "email": {
+        const trimmed = String(val).trim();
+        if (!trimmed) {
+          err = "Email is required.";
+        } else if (!emailRegex.test(trimmed)) {
+          err = "Please enter a valid email address (e.g. name@company.com).";
+        }
+        break;
+      }
+      case "password": {
+        if (!val) {
+          err = "Password is required.";
+        } else if (val.length < 6) {
+          err = "Password must be at least 6 characters.";
+        }
+        break;
+      }
+      case "name": {
+        if (!isLogin) {
+          const trimmed = String(val).trim();
+          if (!trimmed) {
+            err = "Full name is required.";
+          } else if (trimmed.length < 2) {
+            err = "Name must be at least 2 characters.";
+          } else if (!/^[a-zA-Z\s.'-]+$/.test(trimmed)) {
+            err = "Name should contain letters only.";
+          }
+        }
+        break;
+      }
+      case "phone": {
+        if (!isLogin) {
+          const trimmed = String(val).trim();
+          if (!trimmed) {
+            err = "Mobile number is required.";
+          } else if (trimmed.startsWith("0")) {
+            err = "Mobile number cannot start with 0 (000 is not allowed). Must start with 6, 7, 8, or 9.";
+          } else if (!/^[6-9]/.test(trimmed)) {
+            err = "Mobile number must start with 6, 7, 8, or 9.";
+          } else if (trimmed.length < 10) {
+            err = `Mobile number must be exactly 10 digits (${trimmed.length}/10 entered).`;
+          } else if (!/^\d{10}$/.test(trimmed)) {
+            err = "Mobile number must be exactly 10 digits.";
+          } else if (/^([0-9])\1{9}$/.test(trimmed)) {
+            err = "Invalid mobile number (all digits cannot be the same).";
+          }
+        }
+        break;
+      }
+      case "confirm": {
+        if (!isLogin) {
+          if (!val) {
+            err = "Please confirm your password.";
+          } else if (val !== currentForm.password) {
+            err = "Passwords do not match.";
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    setFieldErrors((prev) => ({ ...prev, [field]: err }));
+    return err;
+  }
+
+  function handleChange(field, value) {
+    const updatedForm = { ...form, [field]: value };
+    setForm(updatedForm);
+    validateField(field, value, updatedForm);
+
+    if (field === "password" && form.confirm) {
+      validateField("confirm", form.confirm, updatedForm);
     }
     if (apiError) setApiError("");
   }
 
-  function validate() {
+  function handlePhoneChange(e) {
+    const raw = e.target.value.replace(/\D/g, "");
+
+    // Disallow typing 0 or starting with 0 (e.g. 0, 000)
+    if (raw.startsWith("0")) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        phone: "Mobile number cannot start with 0 (000 is not allowed). Must start with 6, 7, 8, or 9.",
+      }));
+      // Do not allow 0 into input
+      return;
+    }
+
+    // Disallow digits not starting with 6, 7, 8, 9
+    if (raw.length > 0 && !/^[6-9]/.test(raw)) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        phone: "Mobile number must start with 6, 7, 8, or 9 (starts with " + raw[0] + " is not allowed).",
+      }));
+      // Do not allow invalid starting digit into input
+      return;
+    }
+
+    const cleaned = raw.slice(0, 10);
+    const updatedForm = { ...form, phone: cleaned };
+    setForm(updatedForm);
+    validateField("phone", cleaned, updatedForm);
+    if (apiError) setApiError("");
+  }
+
+  function handleFocus(field) {
+    validateField(field, form[field]);
+  }
+
+  function handleBlur(field) {
+    validateField(field, form[field]);
+  }
+
+  function handleKeyDown(e, field) {
+    if (e.key === "Enter") {
+      validateField(field, form[field]);
+    }
+  }
+
+  function validateAll() {
+    const fields = isLogin ? ["email", "password"] : ["name", "email", "phone", "password", "confirm"];
     const errs = {};
-    const emailTrim = form.email.trim();
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    let isValid = true;
 
-    // Email validation (both login and register)
-    if (!emailTrim) {
-      errs.email = "Email is required.";
-    } else if (!emailRegex.test(emailTrim)) {
-      errs.email = "Please enter a valid email address (e.g. name@company.com).";
-    }
-
-    // Password validation (both login and register)
-    if (!form.password) {
-      errs.password = "Password is required.";
-    } else if (form.password.length < 6) {
-      errs.password = "Password must be at least 6 characters.";
-    }
-
-    // Additional validations for Registration
-    if (!isLogin) {
-      const nameTrim = form.name.trim();
-      if (!nameTrim) {
-        errs.name = "Full name is required.";
-      } else if (nameTrim.length < 2) {
-        errs.name = "Name must be at least 2 characters.";
-      } else if (!/^[a-zA-Z\s.'-]+$/.test(nameTrim)) {
-        errs.name = "Name should contain letters only.";
-      }
-
-      const phoneTrim = (form.phone || "").trim();
-      if (!phoneTrim) {
-        errs.phone = "Mobile number is required.";
-      } else if (!/^\d{10}$/.test(phoneTrim)) {
-        errs.phone = "Mobile number must be exactly 10 digits.";
-      } else if (!/^[6-9]\d{9}$/.test(phoneTrim)) {
-        errs.phone = "Enter a valid 10-digit Indian mobile number (starts with 6, 7, 8, or 9).";
-      }
-
-      if (!form.confirm) {
-        errs.confirm = "Please confirm your password.";
-      } else if (form.password !== form.confirm) {
-        errs.confirm = "Passwords do not match.";
+    for (const f of fields) {
+      const err = validateField(f, form[f], form);
+      if (err) {
+        errs[f] = err;
+        isValid = false;
       }
     }
 
     setFieldErrors(errs);
-    return Object.keys(errs).length === 0;
+    return isValid;
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setApiError("");
-    if (!validate()) return;
+    if (!validateAll()) return;
 
     setBusy(true);
     try {
@@ -132,7 +219,10 @@ export default function AuthPage({ mode, notice, prefillEmail, onSwitch, onSucce
             <input
               className={`input ${fieldErrors.name ? "invalid" : ""}`}
               value={form.name}
-              onChange={(e) => update("name", e.target.value)}
+              onChange={(e) => handleChange("name", e.target.value)}
+              onFocus={() => handleFocus("name")}
+              onBlur={() => handleBlur("name")}
+              onKeyDown={(e) => handleKeyDown(e, "name")}
               placeholder="e.g. John Doe"
               autoComplete="name"
             />
@@ -146,7 +236,10 @@ export default function AuthPage({ mode, notice, prefillEmail, onSwitch, onSucce
             className={`input ${fieldErrors.email ? "invalid" : ""}`}
             type="email"
             value={form.email}
-            onChange={(e) => update("email", e.target.value)}
+            onChange={(e) => handleChange("email", e.target.value)}
+            onFocus={() => handleFocus("email")}
+            onBlur={() => handleBlur("email")}
+            onKeyDown={(e) => handleKeyDown(e, "email")}
             placeholder="name@company.com"
             autoComplete="email"
           />
@@ -160,7 +253,10 @@ export default function AuthPage({ mode, notice, prefillEmail, onSwitch, onSucce
               className={`input ${fieldErrors.phone ? "invalid" : ""}`}
               type="tel"
               value={form.phone}
-              onChange={(e) => update("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+              onChange={handlePhoneChange}
+              onFocus={() => handleFocus("phone")}
+              onBlur={() => handleBlur("phone")}
+              onKeyDown={(e) => handleKeyDown(e, "phone")}
               inputMode="numeric"
               maxLength={10}
               placeholder="10-digit mobile number (e.g. 9876543210)"
@@ -176,7 +272,10 @@ export default function AuthPage({ mode, notice, prefillEmail, onSwitch, onSucce
             className={`input ${fieldErrors.password ? "invalid" : ""}`}
             type="password"
             value={form.password}
-            onChange={(e) => update("password", e.target.value)}
+            onChange={(e) => handleChange("password", e.target.value)}
+            onFocus={() => handleFocus("password")}
+            onBlur={() => handleBlur("password")}
+            onKeyDown={(e) => handleKeyDown(e, "password")}
             placeholder="At least 6 characters"
             autoComplete={isLogin ? "current-password" : "new-password"}
           />
@@ -190,7 +289,10 @@ export default function AuthPage({ mode, notice, prefillEmail, onSwitch, onSucce
               className={`input ${fieldErrors.confirm ? "invalid" : ""}`}
               type="password"
               value={form.confirm}
-              onChange={(e) => update("confirm", e.target.value)}
+              onChange={(e) => handleChange("confirm", e.target.value)}
+              onFocus={() => handleFocus("confirm")}
+              onBlur={() => handleBlur("confirm")}
+              onKeyDown={(e) => handleKeyDown(e, "confirm")}
               placeholder="Re-enter your password"
               autoComplete="new-password"
             />
