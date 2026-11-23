@@ -17,13 +17,18 @@ export default function App() {
 
   function handleRegistered(email) {
     setPrefillEmail(email);
-    setNotice("Account created successfully. Please log in.");
+    setNotice("Registration successful! Please log in with your credentials.");
     setMode("login");
   }
 
   function handleSwitch() {
     setNotice("");
-    setMode(mode === "login" ? "register" : "login");
+    if (mode === "login") {
+      setPrefillEmail("");
+      setMode("register");
+    } else {
+      setMode("login");
+    }
   }
 
   if (user) return <Dashboard user={user} onLogout={handleLogout} />;

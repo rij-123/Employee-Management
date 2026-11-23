@@ -21,11 +21,16 @@ function startSession(user) {
   return session;
 }
 
-export async function register({ name, email, password }) {
+export async function register({ name, email, phone, password }) {
   const mail = email.trim().toLowerCase();
   const existing = await api.get(`/users?email=${encodeURIComponent(mail)}`);
   if (existing.length) throw new Error("An account with this email already exists.");
-  await api.post("/users", { name: name.trim(), email: mail, password: await hash(password) });
+  await api.post("/users", {
+    name: name.trim(),
+    email: mail,
+    phone: phone ? phone.trim() : "",
+    password: await hash(password),
+  });
 }
 
 export async function login({ email, password }) {
